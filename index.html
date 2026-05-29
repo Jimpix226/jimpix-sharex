@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Jimpix · Share</title>
+
+<!-- OG / Discord embed tags — filled dynamically on view screen -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Jimpix · Shared Image">
+<meta property="og:description" content="View shared image on Jimpix">
+<meta property="og:site_name" content="Jimpix">
+<meta name="twitter:card" content="summary_large_image">
+<meta id="og-image" property="og:image" content="">
+<meta id="tw-image" name="twitter:image" content="">
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;700;800&display=swap');
 
@@ -13,6 +23,8 @@
     --border: #222230;
     --accent: #e8ff47;
     --accent2: #47b4ff;
+    --dc: #5865F2;
+    --dc-hover: #4752c4;
     --text: #f0f0f8;
     --muted: #555570;
     --danger: #ff4757;
@@ -78,9 +90,51 @@
     margin-bottom: 36px;
   }
 
-  .field {
-    margin-bottom: 18px;
+  /* Discord login button */
+  .btn-discord {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 15px 20px;
+    background: var(--dc);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Syne', sans-serif;
+    font-size: 1rem;
+    font-weight: 800;
+    cursor: pointer;
+    letter-spacing: .02em;
+    transition: background .2s, transform .15s;
+    text-decoration: none;
   }
+
+  .btn-discord:hover { background: var(--dc-hover); transform: translateY(-1px); }
+  .btn-discord:active { transform: translateY(0); }
+
+  .btn-discord svg { flex-shrink: 0; }
+
+  .login-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 24px 0;
+    color: var(--muted);
+    font-family: 'Space Mono', monospace;
+    font-size: .72rem;
+  }
+
+  .login-divider::before,
+  .login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .field { margin-bottom: 18px; }
 
   label {
     display: block;
@@ -170,6 +224,26 @@
   }
 
   .app-logo span { color: var(--accent); }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--dc);
+    object-fit: cover;
+  }
+
+  .user-tag {
+    font-family: 'Space Mono', monospace;
+    font-size: .75rem;
+    color: var(--muted);
+  }
 
   .logout-btn {
     font-family: 'Space Mono', monospace;
@@ -326,13 +400,28 @@
     margin-top: 10px;
   }
 
+  .discord-embed-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(88,101,242,0.12);
+    border: 1px solid rgba(88,101,242,0.3);
+    border-radius: 10px;
+    font-family: 'Space Mono', monospace;
+    font-size: .72rem;
+    color: #a8adff;
+    line-height: 1.5;
+  }
+
   /* ── VIEW SCREEN ── */
   #view-screen {
     display: none;
     position: relative;
     z-index: 10;
     width: 100%;
-    max-width: 800px;
+    max-width: 860px;
     padding: 20px;
     text-align: center;
     animation: slideUp .5s cubic-bezier(.16,1,.3,1) both;
@@ -351,7 +440,7 @@
     border-radius: 16px;
     box-shadow: 0 30px 80px rgba(0,0,0,0.7);
     display: block;
-    margin: 0 auto 20px;
+    margin: 0 auto 24px;
   }
 
   .view-actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
@@ -367,17 +456,67 @@
     cursor: pointer;
     font-size: .9rem;
     text-decoration: none;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     transition: opacity .15s;
   }
 
   .dl-btn:hover { opacity: .8; }
+
+  .dl-btn.secondary {
+    background: var(--border);
+    color: var(--text);
+  }
 
   .no-image-msg {
     color: var(--muted);
     font-family: 'Space Mono', monospace;
     font-size: .9rem;
     margin-top: 40px;
+  }
+
+  /* Discord embed hint box */
+  .embed-hint {
+    margin: 16px auto 0;
+    max-width: 500px;
+    padding: 14px 18px;
+    background: rgba(88,101,242,0.1);
+    border: 1px solid rgba(88,101,242,0.25);
+    border-radius: 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: .72rem;
+    color: #a8adff;
+    line-height: 1.6;
+    text-align: left;
+  }
+
+  .embed-hint strong { color: #c5c8ff; }
+
+  /* OAuth callback spinner */
+  #oauth-screen {
+    display: none;
+    position: relative;
+    z-index: 10;
+    text-align: center;
+  }
+
+  .spinner {
+    width: 48px;
+    height: 48px;
+    border: 3px solid var(--border);
+    border-top-color: var(--dc);
+    border-radius: 50%;
+    animation: spin .8s linear infinite;
+    margin: 0 auto 20px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .oauth-msg {
+    font-family: 'Space Mono', monospace;
+    font-size: .85rem;
+    color: var(--muted);
   }
 
   /* Animations */
@@ -400,11 +539,28 @@
 </head>
 <body>
 
+<!-- ── OAUTH LOADING ── -->
+<div id="oauth-screen">
+  <div class="spinner"></div>
+  <div class="oauth-msg">Signing in with Discord...</div>
+</div>
+
 <!-- ── LOGIN ── -->
 <div id="login-screen">
   <div class="login-card">
     <div class="login-logo">Jimp<span>ix</span></div>
     <div class="login-sub">// private image share</div>
+
+    <!-- Discord OAuth button -->
+    <a id="discord-login-btn" class="btn-discord" href="#" onclick="startDiscordLogin(); return false;">
+      <svg width="22" height="16" viewBox="0 0 127 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z" fill="currentColor"/>
+      </svg>
+      Continue with Discord
+    </a>
+
+    <div class="login-divider">or use password</div>
+
     <div class="field">
       <label>Username</label>
       <input type="text" id="username" placeholder="username" autocomplete="username" />
@@ -422,7 +578,11 @@
 <div id="app-screen">
   <div class="app-header">
     <div class="app-logo">Jimp<span>ix</span></div>
-    <button class="logout-btn" onclick="doLogout()">sign out</button>
+    <div class="user-info">
+      <img id="user-avatar" class="user-avatar" src="" alt="" style="display:none">
+      <span class="user-tag" id="user-tag"></span>
+      <button class="logout-btn" onclick="doLogout()">sign out</button>
+    </div>
   </div>
 
   <div id="paste-zone" tabindex="0" onclick="document.getElementById('file-input').click()">
@@ -446,6 +606,10 @@
       <button class="copy-btn" id="copy-btn" onclick="copyLink()">Copy</button>
     </div>
     <div class="share-note">⚠ Anyone with this link can view the image — no login required for viewers.</div>
+    <div class="discord-embed-note">
+      <svg width="16" height="16" viewBox="0 0 127 96" fill="currentColor" style="flex-shrink:0;margin-top:2px"><path d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0a105.89 105.89 0 0 0-26.25 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"/></svg>
+      <span>Discord embed: paste the link into Discord — a <strong>preview image</strong> will appear automatically if the link is opened in a browser first (Discord caches the OG image). For guaranteed embed, use the <strong>"Copy Direct Image URL"</strong> button on the view page.</span>
+    </div>
   </div>
 </div>
 
@@ -457,15 +621,83 @@
   <img id="view-img" src="" alt="Shared image" />
   <div class="view-actions">
     <a id="dl-link" class="dl-btn" download="jimpix-image.png">⬇ Download</a>
+    <button id="copy-img-btn" class="dl-btn secondary" onclick="copyDirectImage()">📋 Copy Image</button>
+  </div>
+  <div class="embed-hint">
+    <strong>Discord-ba küldés:</strong> A legjobb ha a képet közvetlenül másolod és Discordba illeszted (<strong>📋 Copy Image</strong> gomb), vagy töltsd le és húzd be a chatbe. A link preview Discord-on csak szerveres hostolással működik teljesen.
   </div>
 </div>
 
 <script>
-  // ── Auth ──
+  // ══════════════════════════════════════════════
+  //  CONFIG — set your Discord App Client ID here
+  // ══════════════════════════════════════════════
+  const DISCORD_CLIENT_ID = '1509930043332231410'; // <-- replace this!
+  const DISCORD_REDIRECT_URI = location.origin + location.pathname; // same page
+
+  // Fallback password auth
   const CORRECT_USER = 'Jimpix';
   const CORRECT_PASS = 'hessdalen';
   const SESSION_KEY  = 'jimpix_auth';
+  const DC_USER_KEY  = 'jimpix_dc_user';
 
+  // ── Discord OAuth2 ──
+  function startDiscordLogin() {
+    if (DISCORD_CLIENT_ID === 'YOUR_DISCORD_CLIENT_ID') {
+      alert('Discord login is not configured yet.\nSet DISCORD_CLIENT_ID in the script.\n\nUse password login for now.');
+      return;
+    }
+    const state = Math.random().toString(36).slice(2);
+    sessionStorage.setItem('dc_state', state);
+    const params = new URLSearchParams({
+      client_id: DISCORD_CLIENT_ID,
+      redirect_uri: DISCORD_REDIRECT_URI,
+      response_type: 'token',        // implicit flow — no backend needed
+      scope: 'identify',
+      state
+    });
+    location.href = 'https://discord.com/oauth2/authorize?' + params.toString();
+  }
+
+  async function handleDiscordCallback(fragment) {
+    showScreen('oauth');
+    const params = new URLSearchParams(fragment);
+    const accessToken = params.get('access_token');
+    const returnedState = params.get('state');
+    const savedState = sessionStorage.getItem('dc_state');
+
+    if (!accessToken || returnedState !== savedState) {
+      showScreen('login');
+      return;
+    }
+
+    sessionStorage.removeItem('dc_state');
+
+    try {
+      const res = await fetch('https://discord.com/api/users/@me', {
+        headers: { Authorization: 'Bearer ' + accessToken }
+      });
+      const user = await res.json();
+      const avatarUrl = user.avatar
+        ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=64`
+        : `https://cdn.discordapp.com/embed/avatars/${(BigInt(user.id) >> 22n) % 6n}.png`;
+
+      sessionStorage.setItem(SESSION_KEY, '1');
+      sessionStorage.setItem(DC_USER_KEY, JSON.stringify({
+        username: user.username,
+        discriminator: user.discriminator,
+        avatar: avatarUrl
+      }));
+
+      // Clean the hash so token doesn't stay in URL
+      history.replaceState(null, '', location.pathname);
+      showApp();
+    } catch(e) {
+      showScreen('login');
+    }
+  }
+
+  // ── Password auth ──
   function doLogin() {
     const u = document.getElementById('username').value.trim();
     const p = document.getElementById('password').value;
@@ -488,7 +720,8 @@
 
   function doLogout() {
     sessionStorage.removeItem(SESSION_KEY);
-    location.hash = '';
+    sessionStorage.removeItem(DC_USER_KEY);
+    history.replaceState(null, '', location.pathname);
     location.reload();
   }
 
@@ -550,10 +783,9 @@
     }
   });
 
-  // ── Share link via hash ──
+  // ── Share link ──
   function generateLink() {
     if (!currentDataURL) { alert('Paste or upload an image first.'); return; }
-    // Store in localStorage under a random key
     const key = 'jimpix_img_' + Math.random().toString(36).slice(2, 10);
     try {
       localStorage.setItem(key, currentDataURL);
@@ -578,31 +810,81 @@
     });
   }
 
-  // ── Routing ──
+  // ── Copy image to clipboard (view screen) ──
+  async function copyDirectImage() {
+    const img = document.getElementById('view-img');
+    if (!img.src) return;
+    try {
+      // Convert dataURL to blob and copy as image/png
+      const res = await fetch(img.src);
+      const blob = await res.blob();
+      const pngBlob = blob.type === 'image/png' ? blob : await convertToPng(img);
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'image/png': pngBlob })
+      ]);
+      const btn = document.getElementById('copy-img-btn');
+      btn.textContent = '✓ Copied!';
+      setTimeout(() => { btn.textContent = '📋 Copy Image'; }, 2000);
+    } catch(e) {
+      // Fallback: open image in new tab
+      const w = window.open();
+      w.document.write(`<img src="${img.src}" style="max-width:100%">`);
+    }
+  }
+
+  async function convertToPng(imgEl) {
+    return new Promise(resolve => {
+      const canvas = document.createElement('canvas');
+      canvas.width = imgEl.naturalWidth;
+      canvas.height = imgEl.naturalHeight;
+      canvas.getContext('2d').drawImage(imgEl, 0, 0);
+      canvas.toBlob(resolve, 'image/png');
+    });
+  }
+
+  // ── Screen management ──
+  const screens = ['login-screen','app-screen','view-screen','oauth-screen'];
+
+  function showScreen(name) {
+    screens.forEach(id => {
+      document.getElementById(id).style.display = 'none';
+    });
+    const map = { login: 'login-screen', app: 'app-screen', view: 'view-screen', oauth: 'oauth-screen' };
+    document.getElementById(map[name] || name).style.display = 'block';
+  }
+
   function isLoggedIn() { return sessionStorage.getItem(SESSION_KEY) === '1'; }
 
   function showApp() {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('view-screen').style.display = 'none';
-    document.getElementById('app-screen').style.display = 'block';
-  }
-
-  function showLogin() {
-    document.getElementById('app-screen').style.display = 'none';
-    document.getElementById('view-screen').style.display = 'none';
-    document.getElementById('login-screen').style.display = 'block';
+    // Show Discord user info if available
+    const dcUser = sessionStorage.getItem(DC_USER_KEY);
+    if (dcUser) {
+      try {
+        const u = JSON.parse(dcUser);
+        const av = document.getElementById('user-avatar');
+        av.src = u.avatar;
+        av.style.display = 'block';
+        document.getElementById('user-tag').textContent = u.username;
+      } catch(e) {}
+    }
+    showScreen('app');
   }
 
   function showView(key) {
     const data = localStorage.getItem(key);
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('app-screen').style.display = 'none';
-    document.getElementById('view-screen').style.display = 'block';
+    showScreen('view');
     if (data) {
-      document.getElementById('view-img').src = data;
+      const img = document.getElementById('view-img');
+      img.src = data;
+      img.style.display = 'block';
       document.getElementById('dl-link').href = data;
+
+      // Set OG meta tags dynamically for Discord embed
+      document.getElementById('og-image').setAttribute('content', data);
+      document.getElementById('tw-image').setAttribute('content', data);
     } else {
       document.getElementById('view-img').style.display = 'none';
+      document.getElementById('copy-img-btn').style.display = 'none';
       const p = document.createElement('p');
       p.className = 'no-image-msg';
       p.textContent = 'Image not found or expired.';
@@ -610,15 +892,26 @@
     }
   }
 
+  // ── Router ──
   function route() {
     const hash = location.hash;
-    const match = hash.match(/^#view=(.+)$/);
-    if (match) {
-      showView(match[1]);
-    } else if (isLoggedIn()) {
+
+    // Discord OAuth2 implicit flow callback — token in fragment
+    if (hash.startsWith('#access_token=') || hash.includes('access_token=')) {
+      handleDiscordCallback(hash.slice(1));
+      return;
+    }
+
+    const viewMatch = hash.match(/^#view=(.+)$/);
+    if (viewMatch) {
+      showView(viewMatch[1]);
+      return;
+    }
+
+    if (isLoggedIn()) {
       showApp();
     } else {
-      showLogin();
+      showScreen('login');
     }
   }
 
